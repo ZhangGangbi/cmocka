@@ -1,0 +1,1243 @@
+
+/**********************************************
+
+条件编译
+
+
+起到注释作用,这时编译器会忽略code
+1 #if 0
+2 
+3    code
+4 
+5 #endif 
+
+如果想让code重新活过来，可以用#if 1
+
+① #if defined XXX
+   #endif 
+
+  是条件编译
+
+ # if defined a 
+ # undef a 
+ # define a 200 
+ # endif 
+上述语句检验a是否被定义，如果被定义，则用#undef语句解除定义，并重新定义a为200 
+
+②
+  # ifndef a    //如果a没有被定义 
+  # define a 100 
+  # endif 
+
+③ 
+   # if !defined(symbol）= # ifndef symbol
+   # if defined(symbol)=   # ifdef symbol 
+
+④ #error XXXX 
+   是用来产生编译时错误的信息XXXX，一般用在预处理过程中； 
+
+  #if !defined(__cplusplus) 
+  #error C++ compiler required. 
+  #endif 
+
+elif
+
+
+
+Doxygen 是一个程序的文件产生工具，可将程序中的特定批注转换成为说明文件。
+它是一种开源跨平台的，以类似JavaDoc风格描述的文档系统，完全支持C、C++、Java、Objective-C和IDL语言。
+
+
+⑤
+ @code            
+
+   code注解
+
+ @endcode
+
+⑥ @brief           代码书写的规范，指“简要介绍”
+
+   @return          返回说明
+   @retval          返回值简要说明
+
+
+   @note xxxx       指定函数注意项事或重要的注解指令操作符
+
+   @see             指定简要的参考内容
+  
+   @param[in]      a           输入参数 a
+   @param[out]     b           输出参数 b
+   @param[in|out]
+
+   @defgroup  group        定义一个组
+   @ingroup para          将某一个实体指明为一个组的成员
+
+****************************************************************
+
+cast_to_largest_integral_type(value)
+
+cast_to_pointer_integral_type(value) 
+
+cast_ptr_to_largest_integral_type(value)
+
+
+CMOCKA_PRINTF_ATTRIBUTE(a,b)   ---GCC的printf类型属性检查 
+
+CMOCKA_DEPRECATED
+
+①
+will_return(function, value)   ---该宏 把一个value 放入mock values栈；while programming the behaviour of the mocked
+ object这个宏将用于单元测试本身。
+
+   单元测试让mock object 返回特定的值
+           will_return(chef_cook, "hotdog");
+ 
+           will_return(chef_cook, 0);
+
+mock()  ----mock宏从一堆test values中pops a value；
+  
+    mock object可以检查它所接收的参数是否为测试驱动程序所期望的参数，如
+     int chef_cook(const char *order, char **dish_out)
+ 
+     {
+     check_expected(order);
+ }
+
+
+
+     will_return()和mock()是成对使用的，如果两者数量不平衡，测试会失败。
+
+② 检查一个函数的参数是否正确
+
+  void check_expected(#parameter);   ---The parameter to check
+
+  void check_expected_ptr(#parameter); ----The pointer to check.
+
+  check_expected()检查函数参数，如果参数检查失败，则用expect_*()对队列中的下一个值进行检查。
+
+  如果调用了check_expected()，但是队列中没有参数，则调用会失败。
+
+
+③ 获取当前函数返回值的类型
+
+ （1）  #type mock_type(#type);
+
+       如：int param;
+ 
+           param = mock_type(int);
+ 
+ （2）type mock_ptr_type(#type);
+      
+      如： char *param;
+ 
+           param = mock_ptr_type(char *);
+
+④ Store a value to be returned by mock() later.
+
+（1） void will_return(#function, LargestIntegralType value);                       函数返回given value
+       
+      int return_integer(void)
+ 
+         {
+     return (int)mock();
+  }
+ 
+
+      static void test_integer_return(void **state)
+ 
+      {
+      will_return(return_integer, 42);
+ 
+             assert_int_equal(my_function_calling_return_integer(), 42);
+ 
+       }
+
+（2）void will_return_count(#function, LargestIntegralType value, int count);        函数返回given value
+
+     count：mock()函数返回值的次数，  设置 count ==-1，则函数总是返回，至少返回1次；
+
+                                      设置 count==-2,函数总是返回，但是没有要求一定要返回。
+
+⑤  Store a value that will be always returned by mock().
+
+   （1）void will_return_always(#function, LargestIntegralType value);               函数返回given value
+
+        等效于 will_return_count(function, value, -1); 要求mock()至少返回一次，否则会导致测试失败
+
+   （2）void will_return_maybe(#function, LargestIntegralType value);                 函数返回given value  
+
+        1.该函数将存储mock()返回的值，但并要求mock()至少返回一次；所以mock()没有返回的时候，测试也不会出错。
+        2.相当于will_return_count(function, value, -2);
+
+/*******************************
+         
+⑥ 添加自定义的参数检查函数
+   
+   如果参数为空，parameter is allocated internally by this function；
+   如果提供了参数，则必须将其在堆上分配内存，且不需要由调用者进行释放。
+
+   void expect_check(#function, #parameter, #check_function, const void *check_data);
+
+   function：自定义参数检查函数
+
+   parameter：传递给function的参数
+
+   check_function：被调用的检查函数
+
+   check_data：传递给check_function的数据
+
+⑦ 添加一个event来检查参数值是否是所提供的数组的一部分
+
+  （1） void expect_in_set(#function, #parameter, LargestIntegralType value_array[]);   event通过在mock function 中调用check_expected()触发的。
+
+        #function : The function to add the check for
+   
+        #parameter: The name of the parameter passed to the function
+
+        value_array[]: 检查值的数组
+            
+   
+  （2）void expect_in_set_count(#function, #parameter, LargestIntegralType value_array[], size_t count);
+       
+       event通过在mock function 中调用check_expected()触发的。 
+
+       count：  The count parameter returns the number of times the value
+  should be returned by check_expected(). 
+                If count is set
+ to -1 the value will always be returned.
+
+⑧ 添加一个event来检查参数值是否不是所提供的数组的一部分
+
+   通过在mock function 中调用check_expected()触发事件。
+
+   （1）void expect_not_in_set(#function, #parameter, LargestIntegralType value_array[]);
+
+   （2）void expect_not_in_set_count(#function, #parameter, LargestIntegralType value_array[], size_t count);
+       
+        count： The count parameter returns the number of times the value
+  should be returned by check_expected(). 
+                If count is set
+ to -1 the value will always be returned.
+         
+
+⑨ 
+  （1）添加一个event来检查参数在一个数值范围内
+
+       通过在mock function 中调用check_expected()触发事件。
+
+   void expect_in_range(#function, #parameter, LargestIntegralType minimum, LargestIntegralType maximum);
+
+       minimum <= value <= maximum， 检查成功
+
+  （2）添加一个事件来反复检查参数在一个数值范围内
+    
+        通过在mock function 中调用check_expected()触发事件。
+
+   void expect_in_range_count(#function, #parameter, LargestIntegralType minimum, LargestIntegralType maximum, size_t count);
+  
+   count：  The count parameter returns the number of times the value
+ should be returned by check_expected(). 
+            If count is set
+ to -1 the value will always be returned.
+ 
+
+10.（1） 添加一个事件来检查参数在数值范围之外
+
+        通过在mock function 中调用check_expected()触发事件。
+
+      void expect_not_in_range(#function, #parameter, LargestIntegralType minimum, LargestIntegralType maximum);
+
+        minimum > value > maximum 检查成功
+  
+   （2）添加一个事件来反复检查参数在数值范围之外
+       
+         通过在mock function 中调用check_expected()触发事件。
+
+      void expect_in_range_count(#function, #parameter, LargestIntegralType minimum, LargestIntegralType maximum, size_t count);
+
+      count：  The count parameter returns the number of times the value
+ should be returned by check_expected(). 
+               If count is set
+ to -1 the value will always be returned.
+ 
+
+
+
+11.（1）添加一个事件来检查参数是否是给定的值
+ 
+          通过在mock function 中调用check_expected()触发事件。
+
+      void expect_value(#function, #parameter, LargestIntegralType value);
+   
+      value：要检查的值
+
+   （2）添加一个事件来反复检查参数是否是给定的值
+ 
+          通过在mock function 中调用check_expected()触发事件。
+
+       void expect_value_count(#function, #parameter, LargestIntegralType value, size_t count);
+      
+        count：  The count parameter returns the number of times the value
+ should be returned by check_expected(). 
+               If count is set
+ to -1 the value will always be returned.
+ 
+
+   （3）添加一个事件来检查参数是否不是给定的值
+
+        通过在mock function 中调用check_expected()触发事件。
+
+        void expect_not_value(#function, #parameter, LargestIntegralType value);
+
+   （4）添加一个事件来反复检查参数是否不是给定的值
+
+        通过在mock function 中调用check_expected()触发事件。
+
+       void expect_not_value_count(#function, #parameter, LargestIntegralType value, size_t count);
+
+
+12.  添加一个事件来检查参数值是否等于所提供的字符串(parameter是否等于string)
+
+       通过在mock function 中调用check_expected()触发事件。
+
+    （1）void expect_string(#function, #parameter, const char *string);     
+
+        parameter: The name of the parameter passed to the function
+       
+        string：比较的字符串值  
+
+    （2）void expect_string_count(#function, #parameter, const char *string, size_t count);
+
+         count：  The count parameter returns the number of times the value
+ should be returned by check_expected(). 
+               If count is set
+ to -1 the value will always be returned.
+ 
+
+13. 添加一个事件来检查参数值是否不等于所提供的字符串
+
+    通过在mock function 中调用check_expected()触发事件。
+
+    void expect_not_string(#function, #parameter, const char *string);
+
+    void expect_not_string_count(#function, #parameter, const char *string, size_t count);
+
+    count：  The count parameter returns the number of times the value
+ should be returned by check_expected(). 
+               If count is set
+ to -1 the value will always be returned.
+ 
+
+
+14.（1）添加一个事件来检查参数是否匹配内存区域
+
+        通过在mock function 中调用check_expected()触发事件。
+
+   void expect_memory(#function, #parameter, void *memory, size_t size);
+
+        memory ：用来比较的内存
+
+        size：用来比较的内存的大小
+
+   （2）添加一个事件来反复检查参数是否匹配内存区域
+
+        通过在mock function 中调用check_expected()触发事件。
+
+       void expect_memory_count(#function, #parameter, void *memory, size_t size, size_t count);
+       count：
+
+   （3）添加一个事件来检查参数是否不匹配内存区域
+
+       void expect_not_memory(#function, #parameter, void *memory, size_t size);
+
+   （4）添加一个事件来反复检查参数是否不匹配内存区域
+
+      void expect_not_memory_count(#function, #parameter, void *memory, size_t size, size_t count);
+      count：
+
+15. 添加一个事件来检查是否传递了一个参数(任何值)
+    void expect_any(#function, #parameter);
+    void expect_any_count(#function, #parameter, size_t count);  ---反复检查
+    count:
+
+
+
+/************************************
+
+16.（1）声明表达式是正确的
+
+        void assert_true(scalar expression); 
+
+        expression: 要评估的表达式 
+
+        如果表达式为false，函数打印错误信息到standard error，并调用fail()终止测试.
+
+   （2）声明表达式是错误的
+
+        void assert_false(scalar expression);
+
+        如果表达式为true，函数打印错误信息到standard error，并调用fail()终止测试.
+
+17. 声明 return_code 大于或等于0
+
+    void assert_return_code(int rc, int error);
+
+    如果return code 小于0，函数打印错误信息到standard error，并调用fail()终止测试。
+
+    如果检查函数设置了errno,当出错时，可以将它传递给函数，并作为错误消息的一部分打印出来。
+
+18.（1）声明给定的指针非空
+
+        void assert_non_null(void *pointer);
+
+        pointer：要进行评估的指针
+
+   	如果pointer为空，函数打印错误信息到standard error，并调用fail()终止测试.
+   
+   （2）声明给定的指针为空
+
+        void assert_null(void *pointer);
+
+   	如果pointer非空，函数打印错误信息到standard error，并调用fail()终止测试.
+
+19.（1） 声明给定的两个指针相等
+
+         void assert_ptr_equal(void *a, void *b);
+ 
+         如果两个指针不相等，函数打印错误信息到standard error，并调用fail()终止测试.
+
+
+   （2） 声明给定的两个指针不相等
+
+         void assert_ptr_not_equal(void *a, void *b);
+
+         如果两个指针相等，函数打印错误信息到standard error，并调用fail()终止测试.
+
+20. （1）void assert_int_equal(int a, int b);  判断两个整数相等（一般b值已经给出）
+
+         如果两个整数不相等，函数打印错误信息到standard error，并调用fail()终止测试.
+
+    （2）void assert_int_not_equal(int a, int b);  判断给定的两个整数不相等（一般b值已经给出）
+
+         如果两个整数相等，函数打印错误信息到standard error，并调用fail()终止测试.
+
+21. （1）void assert_string_equal(const char *a, const char *b);   声明给定的两个字符串相等（一般字符串b已经给出）
+
+         如果两个字符串不相等，函数打印错误信息到standard error，并调用fail()终止测试
+
+    （2）void assert_string_not_equal(const char *a, const char *b);   声明给定的两个字符串不相等（一般字符串b已经给出）
+
+         如果两个字符串相等，函数打印错误信息到standard error，并调用fail()终止测试
+
+22.（1）声明两个给定的内存区域是相等的，否则就会失败
+ 
+        void assert_memory_equal(const void *a, const void *b, size_t size);
+
+        size：  The first n bytes of the memory areas to compare.
+ 
+       如果两个内存区域不相等，函数打印错误信息到standard error，并调用fail()终止测试。
+
+   （2）声明两个给定的内存区域不相等
+      
+        void assert_memory_not_equal(const void *a, const void *b, size_t size);
+
+       如果两个内存区域相等，函数打印错误信息到standard error，并调用fail()终止测试
+
+23.（1）声明指定的值不小于最小值，且不大于最大值
+
+   	void assert_in_range(LargestIntegralType value, LargestIntegralType minimum, LargestIntegralType maximum);
+
+  	 value：检查的值
+
+  	 如果value不在范围内，函数打印错误信息到standard error，并调用fail()终止测试
+   
+   （2）声明指定的值小于最小值，或者大于最大值
+
+        void assert_not_in_range(LargestIntegralType value, LargestIntegralType minimum, LargestIntegralType maximum);
+
+        如果value不在范围内，函数打印错误信息到standard error，并调用fail()终止测试
+
+24.（1）声明指定的值在一个集合内
+
+   	void assert_in_set(LargestIntegralType value, LargestIntegralType values[], size_t count);
+
+        value: 要查找的值
+        
+        values[]：要查找值的数组
+
+        count：values[]数组的大小
+
+        如果value不在set范围内，函数打印错误信息到standard error，并调用fail()终止测试
+
+   （2）声明指定的值不在一个集合内
+
+        void assert_not_in_set(LargestIntegralType value, LargestIntegralType values[], size_t count);
+ 
+       如果value在set范围内，函数打印错误信息到standard error，并调用fail()终止测试
+
+/*********************************************************************************************
+
+25.expect_function_call() 和 function_called()是成对使用的，否则会导致测试错误。
+
+    void chef_sing(void);
+ 
+    
+    void code_under_test()
+ 
+    
+    {
+ 
+      chef_sing();
+            //模拟函数
+    }
+ 
+
+    void some_test(void **state)
+ 
+
+   {
+  
+      expect_function_call(chef_sing);
+     
+
+      code_under_test();
+ 
+    }
+
+    .............
+
+    void chef_sing()
+
+   
+    {
+  
+      function_called();
+   
+ }
+   
+ （1）检查当前被模拟的函数（mocked function ）是否按照预期的顺序被调用
+
+      void function_called(void);
+
+ （2）Store expected call(s) to a mock to be checked by function_called() later
+
+      void expect_function_calls(#function, const int times);
+
+      #function ：被调用的函数
+
+      times：这个mock 必须被调用的次数
+
+ （3）Store expected single call to a mock to be checked by
+ function_called() later.
+
+      void expect_function_call(#function);       #function ：被调用的函数
+
+ （4）Expects function_called() from given mock at least once
+
+      void expect_function_call_any(#function);    #function ：被调用的函数  
+
+ （5）Ignores function_called() invocations from given mock function.
+
+      void ignore_function_calls(#function);        #function ：被调用的函数   
+
+
+/*********************************************************************************
+
+unit_test macro
+
+  void Test0(void **state);
+ 
+
+  void Test1(void **state);
+ 
+
+  int main(void)
+ 
+
+ {
+   const struct CMUnitTest tests[] = {
+  
+
+       cmocka_unit_test(Test0),
+       
+
+       cmocka_unit_test(Test1),
+ 
+     };
+ 
+
+     return cmocka_run_group_tests(tests, NULL, NULL);
+ 
+
+ }
+
+1.   void fail(void);       // Forces the test to fail immediately and quit
+
+     void skip(void);       //强制不执行测试，将该测试标记为跳过
+
+     void fail_msg(const char *msg, ...);  // Forces the test to fail immediately and quit,打印原因。
+    
+    （1）fail_msg("This is some error message for test");
+     
+    （2）char *error_msg = "This is some error message for test";
+ 
+      
+         fail_msg("%s", error_msg);
+
+2.运行单个测试的通用方法
+       
+    int run_test(#function);  #function :被测试的函数
+
+    返回0代表成功，1表示失败；
+
+    run_test已经被弃用，现在使用cmocka_run_group_tests()。
+
+  test case：
+
+     void null_test_success(void **state) {
+ }
+ *
+
+
+     int main(void) 
+   
+    {
+    
+      return run_test(null_test_success);
+ 
+    }
+
+
+单独的一句：1607行
+
+ static inline void _unit_test_dummy(void **state) {
+ (void) state;
+}
+
+
+3.初始化 UnitTest 结构
+
+ #define unit_test(f)
+
+ 这个函数被弃用，现在支持 cmocka_unit_test()
+
+
+4.用setup函数初始化 UnitTest 结构
+
+  #define _unit_test_setup(test, setup)
+  #define unit_test_setup(test, setup)
+
+ 这个函数被弃用，现在支持 cmocka_unit_test_setup(test, setup)
+
+5.用teardown 函数初始化UnitTest 结构
+
+ #define _unit_test_teardown(test, teardown)
+
+ 这个函数被弃用，现在支持 cmocka_unit_test_teardown(test, teardown)
+
+6.Initializes a UnitTest structure for a group setup function.
+
+  #define group_test_setup（setup）
+
+  这个函数被弃用，现在支持  cmocka_run_group_tests()
+
+7. Initializes a UnitTest structure for a group teardown function
+
+   #define group_test_teardown(teardown)
+
+   这个函数被弃用，现在支持  cmocka_run_group_tests
+
+8.初始化一个单元测试结构的数组，其中包含一个测试的setup函数和一个teardown函数，两者都可以为空；
+
+  #define unit_test_setup_teardown(test, setup, teardown)
+
+   这个函数被弃用，现在支持 cmocka_unit_test_setup_teardown(test_case,tup,teardown)
+
+/*********************************************************************
+
+单元测试：
+
+1.初始化 CMUnitTest 结构
+ 
+  #define cmocka_unit_test(f) { #f, f, NULL, NULL, NULL }
+
+  #define cmocka_unit_test_setup(f, setup) { #f, f, setup, NULL, NULL }   // 用setup函数初始化 CMUnitTest 结构
+
+  #define cmocka_unit_test_teardown(f, teardown) { #f, f, NULL, teardown, NULL }  // 用teardown函数初始化 CMUnitTest 结构
+
+2.用setup函数和teardown函数初始化 CMUnitTest 结构数组，setup or teardown 可以为空。
+
+  #define cmocka_unit_test_setup_teardown(f, setup, teardown) { #f, f, setup, teardown, NULL }
+
+3.用给定的初始状态初始化一个CMUnitTest结构，稍后（给定的初始状态）将传递给测试函数作为参数。
+
+  当测试状态不需要特殊初始化或者已经初始化时，可以使用该函数
+
+  #define cmocka_unit_test_prestate(f, state) { #f, f, NULL, NULL, state }
+
+  如果组设置函数已经初始化了状态，则不会被该函数定义的初始状态覆盖。
+
+4.用初始状态、setup函数，teardown函数初始化CMUnitTest结构，这几个值都可以是空。之后初始状态传递给setup函数，如果没有传递，
+
+  则直接进行测试。
+
+  #define cmocka_unit_test_prestate_setup_teardown(f, setup, teardown, state) { #f, f, setup, teardown, state }
+
+
+
+  #define run_tests(tests) _run_tests(tests, sizeof(tests) / sizeof(tests)[0])
+
+
+  #define run_group_tests(tests) _run_group_tests(tests, sizeof(tests) / sizeof(tests)[0])
+
+5.Run tests specified by an array of CMUnitTest structures.( 运行 CMUnitTest 结构数组指定的测试)
+
+  int cmocka_run_group_tests(const struct CMUnitTest group_tests[],
+ CMFixtureFunction group_setup,
+ CMFixtureFunction group_teardown);
+
+  参数 group_tests[]：执行的单元测试数组
+
+       group_setup ：setup函数应该在所有单元测试之前被调用
+
+       group_teardown: 所有单元测试完成之后调用teardown函数
+
+  返回值：0表示成功，非0表示失败。
+
+  代码如下
+
+  static int setup(void **state) 
+ {
+      int *answer = malloc(sizeof(int));
+       
+      if (*answer == NULL) 
+      {
+          return -1;
+       }
+       *answer = 42;
+ 
+       *state = answer;
+ 
+       return 0;
+  }
+ 
+  static int teardown(void **state) 
+  {
+       free(*state);
+ 
+       return 0;
+  }
+ 
+  static void null_test_success(void **state)
+ {
+      (void) state;
+  }
+ 
+  static void int_test_success(void **state)
+ {
+       int *answer = *state;
+       assert_int_equal(*answer, 42);
+  }
+ 
+  int main(void) 
+ {
+      const struct CMUnitTest tests[] = {
+          cmocka_unit_test(null_test_success),
+          cmocka_unit_test_setup_teardown(int_test_success, setup, teardown),
+ };
+ 
+     return cmocka_run_group_tests(tests, NULL, NULL);
+ }
+
+6.运行 CMUnitTest 结构数组指定的测试并且指定一个名字；
+
+  int cmocka_run_group_tests_name(const char *group_name,
+                               
+                                  const struct CMUnitTest group_tests[],
+                              
+                                  CMFixtureFunction group_setup,
+                              
+                                  CMFixtureFunction group_teardown);
+
+  参数  group_name：     The name of the group test
+       
+        其他同上。
+
+  代码如下
+
+  static int setup(void **state) {
+     int *answer = malloc(sizeof(int));
+      if (*answer == NULL) {
+          return -1;
+      }
+      *answer = 42;
+
+      *state = answer;
+
+      return 0;
+  }
+
+   static int teardown(void **state) {
+       free(*state);
+
+       return 0;
+  }
+
+ static void null_test_success(void **state) {
+     (void) state;
+ }
+
+ static void int_test_success(void **state) {
+      int *answer = *state;
+      assert_int_equal(*answer, 42);
+ }
+
+ int main(void) {
+     const struct CMUnitTest tests[] = {
+          cmocka_unit_test(null_test_success),
+         cmocka_unit_test_setup_teardown(int_test_success, setup, teardown),
+     };
+
+      return cmocka_run_group_tests_name("success_test", tests, NULL, NULL);
+  }
+
+/************************************************************************
+
+1. 使用test_malloc()、test_calloc()和test_free()替换malloc()、calloc()和free()；
+  
+   重定向
+
+         #define malloc test_malloc
+
+         #define realloc test_realloc
+
+         #define calloc test_calloc
+
+         #define free test_free
+
+   当块被释放的时候，用test_free()检查块是否损坏，如果检测到一个块被损坏，测试失败；
+
+   使用test_malloc()、test_calloc()分配的函数由cmocka库跟踪。
+
+2.为简单起见，cmocka目前在一个进程中执行所有的测试。因此，测试程序中的所有测试用例共享一个地址空间，
+
+  这意味着单个测试用例的内存损坏可能导致测试应用程序过早退出。
+
+① Test function overriding calloc.
+
+  void *test_calloc(size_t nmemb, size_t size);
+  
+  参数 nmemb：要分配的数组的元素个数
+  
+       size：每个数组元素的字节大小
+
+  返回值：成功返回一个非空指针（指向分配的内存）
+
+         如果指针为NULL，则申请失败。
+
+  初始内存被设置为0；
+
+② Test function overriding realloc 检测缓冲区溢出和memoery泄漏。
+
+   void *test_realloc(void *ptr, size_t size);
+
+   ptr ：要更改的内存块
+
+   size：分配的字节大小
+
+  返回值：成功，返回最新申请的内存块；
+     
+          失败，返回NULL
+
+③ Test function overriding free
+
+   void test_free(void *ptr);
+ 
+   ptr：指向释放的内存空间的指针。
+
+/********************************************
+
+处理标准C库的声明
+
+  运行时声明的宏（如标准C库的assert()）应该在模块中用mock_assert()函数重新定义。
+
+  通常mock_assert()表示测试失败； 
+
+1.在测试代码中替换assert的函数
+
+  在与check_assert()的结合中，可以确定assert condition 是否在不停止测试的情况下失败
+
+  void mock_assert(const int result, const char* const expression,
+ const char * const file, const int line);
+
+  result：The expression to assert
+
+  expression：字符串表达式
+
+  file：  The file mock_assert() is called.
+
+  line：  The line mock_assert() is called
+
+代码示例：
+
+  #ifdef UNIT_TESTING
+  extern void mock_assert(const int result, const char* const expression,
+                          const char * const file, const int line);
+
+  #undef assert
+  #define assert(expression) mock_assert((int)(expression), #expression, __FILE__, __LINE__);
+  #endif
+ 
+  void increment_value(int * const value) {
+     assert(value);
+      (*value) ++;
+  } 
+
+
+2.确保mock_assert()被调用
+
+  void expect_assert_failure(function fn_call);
+
+  这个函数会调用mock_assert()；如果mock_assert()被调用，会返回assert expression string
+
+  代码示例：
+
+  #define assert mock_assert
+
+  void showmessage(const char *message)
+  {
+    assert(message);
+  }
+
+  int main(int argc, const char* argv[])
+  {
+    expect_assert_failure(show_message(NULL));
+    printf("succeeded\n");
+    return 0;
+  }
+
+/*******************************************
+
+1.setup, test and teardown函数原型
+
+      typedef void (*UnitTestFunction)(void **state);
+
+  setup and teardown函数原型
+
+      typedef int (*CMFixtureFunction)(void **state);
+
+      struct CMUnitTest {
+  
+
+       const char *name;
+    
+       CMUnitTestFunction test_func;
+   
+       CMFixtureFunction setup_func;
+    
+       CMFixtureFunction teardown_func;
+    
+       void *initial_state;
+     
+};
+
+2.确定函数参数是否正确
+
+  typedef int (*CheckParameterValue)  (const LargestIntegralType value,
+ const LargestIntegralType check_value_data);
+
+3.unit test函数类型
+
+  typedef enum UnitTestFunctionType {
+   
+
+   UNIT_TEST_FUNCTION_TYPE_TEST = 0,
+    
+   UNIT_TEST_FUNCTION_TYPE_SETUP,
+   
+   UNIT_TEST_FUNCTION_TYPE_TEARDOWN,
+    
+   UNIT_TEST_FUNCTION_TYPE_GROUP_SETUP,
+   
+   UNIT_TEST_FUNCTION_TYPE_GROUP_TEARDOWN,
+
+ 
+  } UnitTestFunctionType;
+
+4.Stores a unit test function with its name and type
+
+  typedef struct UnitTest {
+    
+
+  const char* name;
+   
+  UnitTestFunction function;
+    
+  UnitTestFunctionType function_type;
+
+
+  } UnitTest;
+
+  typedef struct GroupTest {
+   
+  
+   UnitTestFunction setup;
+    
+   UnitTestFunction teardown;
+   
+   const UnitTest *tests;
+           //可以指定空函数指针。
+   const size_t number_of_tests;
+
+  
+} GroupTest;
+
+  setup和teardown函数是成对使用。
+
+5.test functions 原型
+
+  typedef void (*CMUnitTestFunction)  (void **state);
+
+6. Location within some source code
+
+   typedef struct SourceLocation {
+    const char* file;
+    int line;
+} SourceLocation;
+
+7.检查参数值的事件
+
+  typedef struct CheckParameterEvent {
+  
+
+   SourceLocation location;
+    
+   const char *parameter_name;
+    
+   CheckParameterValue check_value;
+    
+   LargestIntegralType check_value_data;
+
+  
+} CheckParameterEvent;
+
+8.用于expect_assert_failure() and mock_assert()
+
+  extern int global_expecting_assert;
+  
+extern jmp_buf global_expect_assert_env;
+  
+extern const char * global_last_failed_assert;
+
+9.Retrieves a value for the given function, as set by "will_return".
+
+  
+LargestIntegralType _mock(const char * const function, const char* const file,
+  const int line);
+
+  void _expect_function_call(
+    const char * const function_name,
+    const char * const file,
+    const int line,
+    const int count);
+
+  void _function_called(const char * const function, const char* const file,
+                          const int line);
+
+  void _expect_check(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line,
+    const CheckParameterValue check_function,
+    const LargestIntegralType check_data, CheckParameterEvent * const event,
+    const int count);
+
+  void _expect_in_set(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const LargestIntegralType values[],
+    const size_t number_of_values, const int count);
+  void _expect_not_in_set(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const LargestIntegralType values[],
+    const size_t number_of_values, const int count);
+
+  void _expect_in_range(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line,
+    const LargestIntegralType minimum,
+    const LargestIntegralType maximum, const int count);
+  void _expect_not_in_range(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line,
+    const LargestIntegralType minimum,
+    const LargestIntegralType maximum, const int count);
+
+  void _expect_value(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const LargestIntegralType value,
+    const int count);
+  void _expect_not_value(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const LargestIntegralType value,
+    const int count);
+
+  void _expect_string(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const char* string,
+    const int count);
+  void _expect_not_string(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const char* string,
+    const int count);
+
+  void _expect_memory(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const void* const memory,
+    const size_t size, const int count);
+  void _expect_not_memory(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const void* const memory,
+    const size_t size, const int count);
+
+  void _expect_any(
+    const char* const function, const char* const parameter,
+    const char* const file, const int line, const int count);
+
+  void _check_expected(
+    const char * const function_name, const char * const parameter_name,
+    const char* file, const int line, const LargestIntegralType value);
+
+  void _will_return(const char * const function_name, const char * const file,
+                  const int line, const LargestIntegralType value,
+                  const int count);
+  void _assert_true(const LargestIntegralType result,
+                  const char* const expression,
+                  const char * const file, const int line);
+  void _assert_return_code(const LargestIntegralType result,
+                         size_t rlen,
+                         const LargestIntegralType error,
+                         const char * const expression,
+                         const char * const file,
+                         const int line);
+  void _assert_int_equal(
+    const LargestIntegralType a, const LargestIntegralType b,
+    const char * const file, const int line);
+  void _assert_int_not_equal(
+    const LargestIntegralType a, const LargestIntegralType b,
+    const char * const file, const int line);
+  void _assert_string_equal(const char * const a, const char * const b,
+                          const char * const file, const int line);
+  void _assert_string_not_equal(const char * const a, const char * const b,
+                              const char *file, const int line);
+  void _assert_memory_equal(const void * const a, const void * const b,
+                          const size_t size, const char* const file,
+                          const int line);
+  void _assert_memory_not_equal(const void * const a, const void * const b,
+                              const size_t size, const char* const file,
+                              const int line);
+  void _assert_in_range(
+    const LargestIntegralType value, const LargestIntegralType minimum,
+    const LargestIntegralType maximum, const char* const file, const int line);
+  void _assert_not_in_range(
+    const LargestIntegralType value, const LargestIntegralType minimum,
+    const LargestIntegralType maximum, const char* const file, const int line);
+  void _assert_in_set(
+    const LargestIntegralType value, const LargestIntegralType values[],
+    const size_t number_of_values, const char* const file, const int line);
+  void _assert_not_in_set(
+    const LargestIntegralType value, const LargestIntegralType values[],
+    const size_t number_of_values, const char* const file, const int line);
+
+  void* _test_malloc(const size_t size, const char* file, const int line);
+  void* _test_realloc(void *ptr, const size_t size, const char* file, const int line);
+  void* _test_calloc(const size_t number_of_elements, const size_t size,
+                   const char* file, const int line);
+  void _test_free(void* const ptr, const char* file, const int line);
+
+  void _fail(const char * const file, const int line);
+
+  void _skip(const char * const file, const int line);
+
+  int _run_test(
+    const char * const function_name, const UnitTestFunction Function,
+    void ** const volatile state, const UnitTestFunctionType function_type,
+    const void* const heap_check_point);
+   
+   CMOCKA_DEPRECATED int _run_tests(const UnitTest * const tests,
+                                 const size_t number_of_tests);
+   CMOCKA_DEPRECATED int _run_group_tests(const UnitTest * const tests,
+                                       const size_t number_of_tests);
+
+
+10.test runner
+
+   int _cmocka_run_group_tests(const char *group_name,const struct CMUnitTest * const tests,
+const size_t num_tests,
+
+                                CMFixtureFunction group_setup,
+CMFixtureFunction group_teardown);
+
+11.Standard output and error print
+
+   void print_message(const char* const format, ...) CMOCKA_PRINTF_ATTRIBUTE(1, 2);
+
+   void print_error(const char* const format, ...) CMOCKA_PRINTF_ATTRIBUTE(1, 2);
+
+   void vprint_message(const char* const format, va_list args) CMOCKA_PRINTF_ATTRIBUTE(1, 0);
+
+   void vprint_error(const char* const format, va_list args) CMOCKA_PRINTF_ATTRIBUTE(1, 0);
+
+
+
+   enum cm_message_output {
+ 
+  
+   CM_OUTPUT_STDOUT,
+    
+   CM_OUTPUT_SUBUNIT,
+   
+   CM_OUTPUT_TAP,
+    
+   CM_OUTPUT_XML,
+
+   };
+
+   环境变量可以设置为STDOUT、SUBUNIT、TAP或XML
+
+
+12. 设置测试的输出格式
+
+    void cmocka_set_message_output(enum cm_message_output output);
+
+    测试的输出格式可以使用这个函数来设置，也可以使用环境变量CMOCKA_MESSAGE_OUTPUT来覆盖这个函数。
+
+
+
+
+
+
+
+/*******************************************************************
+
+1. 以前的写法
+
+   void null_test_success(void **state) { }
+
+    int main(void) {
+       return run_test(null_test_success);
+    }
+
+  现在的写法，最好使用现在这种
+
+  static void null_test_success(void **state) { (void) state;........}
+
+ int main()
+ {
+  const struct CMUnitTest tests[] = {
+          cmocka_unit_test(null_test_success),
+          .........
+     };
+
+     return cmocka_run_group_tests(tests, NULL, NULL); 
+   //return cmocka_run_group_tests_name("success_test", tests, NULL, NULL);
+ }
+
